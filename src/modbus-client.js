@@ -36,7 +36,7 @@ module.exports = function (RED) {
      * @returns {net.Socket}
      */
     function createSocketForVRF (vrfName) {
-      const { setsockoptString } = require('../node-sockopt')
+      const { setsockoptString } = require('sockopt')
       const SOL_SOCKET = 1
       const SO_BINDTODEVICE = 25
       const VRF_IFACE = vrfName

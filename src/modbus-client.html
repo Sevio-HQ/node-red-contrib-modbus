@@ -41,7 +41,8 @@
 
       showErrors: {value: false},
       showWarnings: {value: true},
-      showLogs: {value: true}
+      showLogs: {value: true},
+      vrfName: {value: ''}
     },
     label: function () {
       let node = this
@@ -258,6 +259,10 @@
                         <option value="C701">C701</option>
                         <option value="UDP">UDP</option>
                     </select>
+                </div>
+                <div class="form-row">
+                    <label for="node-config-input-vrfName"><i class="icon-bookmark"></i> <span>VRF Name</span></label>
+                    <input type="text" id="node-config-input-vrfName" placeholder="e.g. vrf-blue">
                 </div>
             </div>
             <div id="node-inputs-modbus-serial">

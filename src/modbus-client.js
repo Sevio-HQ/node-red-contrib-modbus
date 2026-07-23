@@ -28,6 +28,38 @@ module.exports = function (RED) {
 
     // create an empty modbus client
     const ModbusRTU = require('@openp4nr/modbus-serial')
+    const net = require('net')
+
+    /**
+     * Create a net.Socket that binds to a VRF interface.
+     * @param {string} vrfName - the VRF interface name (e.g. "vrf-blue").
+     * @returns {net.Socket}
+     */
+    function createSocketForVRF (vrfName) {
+      const { setsockoptString } = require('../node-sockopt')
+      const SOL_SOCKET = 1
+      const SO_BINDTODEVICE = 25
+      const VRF_IFACE = vrfName
+
+      const socket = new net.Socket()
+      const kHandle = Object.getOwnPropertySymbols(socket).find(s => s.description === 'kHandle')
+
+      let _realHandle
+      Object.defineProperty(socket, '_handle', {
+        get: () => _realHandle,
+        set: (handle) => {
+          _realHandle = handle
+          socket[kHandle] = handle
+          if (handle && typeof handle.bind === 'function') {
+            handle.bind('0.0.0.0', 0)
+            setsockoptString(socket, SOL_SOCKET, SO_BINDTODEVICE, VRF_IFACE)
+          }
+        },
+        configurable: true
+      })
+
+      return socket
+    }
 
     const unlimitedListeners = 0
     const minCommandDelayMilliseconds = 1
@@ -54,6 +86,7 @@ module.exports = function (RED) {
     this.tcpHost = config.tcpHost
     this.tcpPort = parseInt(config.tcpPort) || 502
     this.tcpType = config.tcpType
+    this.vrfName = config.vrfName || ''
 
     this.serialPort = config.serialPort
     this.serialBaudrate = config.serialBaudrate
@@ -339,6 +372,10 @@ module.exports = function (RED) {
           }
 
           try {
+            const vrfSocket = (node.vrfName && node.vrfName.trim().length > 0)
+              ? createSocketForVRF(node.vrfName.trim())
+              : null
+
             switch (node.tcpType) {
               case 'C701':
                 verboseLog('C701 port UDP bridge')
@@ -390,7 +427,8 @@ module.exports = function (RED) {
                 verboseLog('TCP port')
                 node.client.connectTCP(node.tcpHost, {
                   port: node.tcpPort,
-                  autoOpen: true
+                  autoOpen: true,
+                  socket: vrfSocket || undefined
                 }).then(node.setTCPConnectionOptions)
                   .catch((err) => {
                     node.modbusTcpErrorHandling(err)

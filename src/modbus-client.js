@@ -22,6 +22,38 @@ module.exports = function (RED) {
   const coreModbusQueue = require('./core/modbus-queue-core')
   const internalDebugLog = require('debug')('contribModbus:config:client')
   const _ = require('underscore')
+  const net = require('net')
+
+  /**
+   * Create a net.Socket that binds to a VRF interface.
+   * @param {string} vrfName - the VRF interface name (e.g. "vrf-blue").
+   * @returns {net.Socket}
+   */
+  function createSocketForVRF (vrfName) {
+    const { setsockoptString } = require('sockopt')
+    const SOL_SOCKET = 1
+    const SO_BINDTODEVICE = 25
+    const VRF_IFACE = vrfName
+
+    const socket = new net.Socket()
+    const kHandle = Object.getOwnPropertySymbols(socket).find(s => s.description === 'kHandle')
+
+    let _realHandle
+    Object.defineProperty(socket, '_handle', {
+      get: () => _realHandle,
+      set: (handle) => {
+        _realHandle = handle
+        socket[kHandle] = handle
+        if (handle && typeof handle.bind === 'function') {
+          handle.bind('0.0.0.0', 0)
+          setsockoptString(socket, SOL_SOCKET, SO_BINDTODEVICE, VRF_IFACE)
+        }
+      },
+      configurable: true
+    })
+
+    return socket
+  }
 
   function ModbusClientNode (config) {
     RED.nodes.createNode(this, config)
@@ -54,6 +86,7 @@ module.exports = function (RED) {
     this.tcpHost = config.tcpHost
     this.tcpPort = parseInt(config.tcpPort) || 502
     this.tcpType = config.tcpType
+    this.vrfName = config.vrfName
 
     this.serialPort = config.serialPort
     this.serialBaudrate = config.serialBaudrate
@@ -329,6 +362,18 @@ module.exports = function (RED) {
           }
 
           try {
+            const tcpOptions = {
+              port: node.tcpPort,
+              autoOpen: true
+            }
+            if (node.vrfName) {
+              // modbus-serial only accepts an external socket that is already
+              // opening or open, so initiate the connection here
+              const vrfSocket = createSocketForVRF(node.vrfName)
+              vrfSocket.connect(node.tcpPort, node.tcpHost)
+              tcpOptions.socket = vrfSocket
+            }
+
             switch (node.tcpType) {
               case 'C701':
                 verboseLog('C701 port UDP bridge')
@@ -366,11 +411,7 @@ module.exports = function (RED) {
                   })
                 break
               default:
-                verboseLog('TCP port')
-                node.client.connectTCP(node.tcpHost, {
-                  port: node.tcpPort,
-                  autoOpen: true
-                }).then(node.setTCPConnectionOptions)
+                node.client.connectTCP(node.tcpHost, tcpOptions).then(node.setTCPConnectionOptions)
                   .catch((err) => {
                     node.modbusTcpErrorHandling(err)
                     return false

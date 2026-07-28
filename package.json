@@ -1,5 +1,5 @@
 {
-  "name": "node-red-contrib-modbus",
+  "name": "@sevio-hq/node-red-contrib-modbus",
   "version": "5.40.0",
   "private": false,
   "description": "The all in one Modbus TCP and Serial contribution long term supported package for Node-RED.",
@@ -30,7 +30,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/biancoroyal/node-red-contrib-modbus.git"
+    "url": "git+https://github.com/Sevio-HQ/node-red-contrib-modbus.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "node-red": {
     "version": ">=3",

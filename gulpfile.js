@@ -103,7 +103,7 @@ function doc (cb) {
     .pipe(jsdoc(cb))
 }
 
-exports.default = series(cleanProject, releaseWebContent, releaseJSContent, codeJSContent, releaseLocal, releaseIcons, doc, docIcons, docImages, changelogUpdate)
+exports.default = series(cleanProject, releaseWebContent, releaseJSContent, codeJSContent, releaseLocal, releaseIcons, doc, docIcons, docImages)
 exports.clean = cleanProject
 exports.build = series(cleanProject, releaseWebContent, releaseJSContent, releaseLocal, codeJSContent)
 exports.buildDocs = series(doc, docIcons, docImages)

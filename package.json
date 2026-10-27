@@ -1,5 +1,5 @@
 {
-  "name": "@sevio-hq/node-red-contrib-modbus",
+  "name": "node-red-contrib-modbus",
   "version": "5.40.0",
   "private": false,
   "description": "The all in one Modbus TCP and Serial contribution long term supported package for Node-RED.",
@@ -10,7 +10,6 @@
     "debug": "~4.3.5",
     "jsmodbus": "~4.0.10",
     "line-by-line": "~0.1.6",
-    "sockopt": "github:Sevio-HQ/node-sockopt",
     "source-map-support": "~0.5.21",
     "underscore": "~1.13.6"
   },
